@@ -1,57 +1,50 @@
 class FlappyBirdGame
 {
   /*
-  Models the Flappy Bird game at a high level by creating in-game objects,
-  handling user inputs, and moving through game states.
+  Versión simplificada del juego Flappy Bird.
   */
 
-  field FlappyBird bird;                  // FlappyBird object.
-  field Scoreboard scoreboard;            // Scoreboard object.
-  field int bird_wing_state_count;        // Track Bird wing image angle.
-  field int bird_fall_count;              // Track Bird's downward movement.
-  field int bird_height_default;          // Default Bird starting height.
-  field Array pipes;                      // Visible pipes on screen.
-  field int count_pipes;                  // Number of pipes visible.
-  field int dist_between_pipes;           // Interval between successive pipes.
-  field int dist_after_last_pipe;         // Amount of space following last created pipe.
-  field int jumps;                        // Number of jumps made in game.
-  field int total_pipes;                  // Number of pipes created.
+  field FlappyBird bird;                  // Objeto FlappyBird.
+  field int bird_wing_state_count;        // Control del estado de alas del pájaro.
+  field int bird_fall_count;              // Control del movimiento de caída.
+  field int bird_height_default;          // Altura inicial por defecto.
+  field Array pipes;                      // Tuberías visibles en pantalla.
+  field int count_pipes;                  // Número de tuberías visibles.
+  field int dist_between_pipes;           // Intervalo entre tuberías.
+  field int dist_after_last_pipe;         // Espacio tras la última tubería creada.
+  field int jumps;                        // Número de saltos realizados.
 
   /*
-  Flappy Bird Game constructor.
+  Constructor del juego Flappy Bird.
   */
   constructor FlappyBirdGame new() {
     let bird_height_default = 150;
-    let scoreboard = Scoreboard.new();
     let pipes = Array.new(10);
     let count_pipes = 0;
     let dist_between_pipes = 100;
     let dist_after_last_pipe = 0;
     let jumps = 1;
-    let total_pipes = 0;
 
     return this;
   }
 
   /*
-  Display instructions on the screen.
+  Muestra instrucciones en pantalla.
   */
   method void displayInstructions()
   {
     do Output.moveCursor(0, 0);
-    do Output.printString("Welcome to 16-bit Flappy Bird.");
+    do Output.printString("Flappy Bird Simple");
     do Output.println();
-    do Output.printString("To jump, press the space bar.");
+    do Output.printString("Espacio para saltar");
     do Output.println();
-    do Output.printString("To quit, press the 'q' key.");
-    do Output.println();
-    do Output.printString("To win, stay alive.");
+    do Output.printString("'q' para salir");
 
     return;
   }
 
   /*
-  Main loop for running game.
+  Bucle principal del juego.
   */
   method void run() {
      var char key;
@@ -60,10 +53,10 @@ class FlappyBirdGame
      do initializeGameState();
      do waitForGameToStart();
      let last_key = 32;
-     while (~(key = 81)) { // 'q' key
+     while (~(key = 81)) { // tecla 'q'
 
-        // Determine if new jump has occurred.
-        if ((key = 32) & ~(last_key = 32)) {      // space bar
+        // Determina si ha ocurrido un nuevo salto.
+        if ((key = 32) & ~(last_key = 32)) {      // barra espaciadora
           let jumps = jumps + 1;
           do bird.moveUp();
         } else {
@@ -71,18 +64,20 @@ class FlappyBirdGame
           do updateBirdWingState();
         }
 
-        // If collision found, go to score and reset state.
+        // Si hay colisión, reiniciar el juego
         if (findCollision()) {
-          do displayScore();
+          do whiteout();
+          do Output.moveCursor(10, 25);
+          do Output.printString("Game Over!");
           do Sys.wait(3000);
           do initializeGameState();
           do waitForGameToStart();
         }
 
-        // Draw updated game to screen.
+        // Dibujar el juego actualizado
         do draw();
 
-        // Check key pressed.
+        // Comprobar tecla pulsada
         let last_key = key;
         let key = Keyboard.keyPressed();
         do Sys.wait(10);
@@ -92,7 +87,7 @@ class FlappyBirdGame
   }
 
   /*
-  Animate Bird before game begins.
+  Anima el pájaro antes de que comience el juego.
   */
   method void waitForGameToStart()
   {
@@ -110,7 +105,7 @@ class FlappyBirdGame
   }
 
   /*
-  Set all fields to pre-game state.
+  Establece todos los campos al estado inicial.
   */
   method void initializeGameState()
   {
@@ -123,7 +118,7 @@ class FlappyBirdGame
 
     let bird = FlappyBird.new(bird_height_default);
 
-    // Remove existing pipes.
+    // Elimina las tuberías existentes.
     while (i < count_pipes) {
       let pipe = pipes[i];
       do pipe.dispose();
@@ -131,7 +126,6 @@ class FlappyBirdGame
     }
 
     let count_pipes = 0;
-    let total_pipes = 0;
     let bird_wing_state_count = 1;
     let bird_fall_count = 1;
     let dist_after_last_pipe = dist_between_pipes;
@@ -140,7 +134,7 @@ class FlappyBirdGame
   }
 
   /*
-  White out screen.
+  Limpia la pantalla.
   */
   method void whiteout()
   {
@@ -151,25 +145,11 @@ class FlappyBirdGame
   }
 
   /*
-  Display final score to screen.
-  */
-  method void displayScore()
-  {
-    var int score;
-    let score = 0;
-
-    let score = calculateScore();
-    do scoreboard.draw(score);
-
-    return;
-  }
-
-  /*
-  Update bird's rising/falling status.
+  Actualiza el estado de caída del pájaro.
   */
   method void updateBirdFallState()
   {
-    // Only move bird after every five 'draw' cycles to prevent dropping too fast.
+    // Solo mueve el pájaro cada cinco ciclos para evitar que caiga demasiado rápido.
     if (bird_fall_count = 5) {
       do bird.moveDown();
       let bird_fall_count = 1;
@@ -181,11 +161,11 @@ class FlappyBirdGame
   }
 
   /*
-  Update bird wing display state.
+  Actualiza el estado de las alas.
   */
   method void updateBirdWingState()
   {
-    // Only cycle wings after every five 'draw' cycles to prevent changing too fast.
+    // Solo cambia las alas cada cinco ciclos para evitar cambios demasiado rápidos.
     if (bird_wing_state_count = 5) {
       do bird.cycleWingState();
       let bird_wing_state_count = 1;
@@ -197,17 +177,15 @@ class FlappyBirdGame
   }
 
   /*
-  Draw onscreen objects and update their coordinates.
+  Dibuja objetos en pantalla y actualiza sus coordenadas.
   */
   method void draw()
   {
-    var Pipe pipe;
-
-    // Moves pipes left.
+    // Mueve las tuberías a la izquierda.
     do shiftPipesLeft();
-    // Remove first pipe if no longer on screen.
+    // Elimina la primera tubería si ya no está en pantalla.
     do disposeUnseenPipe();
-    // Create new pipe object if existing last pipe has moved far enough.
+    // Crea una nueva tubería si la última se ha movido lo suficiente.
     do createNewPipe();
 
     do bird.draw();
@@ -216,7 +194,7 @@ class FlappyBirdGame
   }
 
   /*
-  Draw pipes and shift their coordinates to the left.
+  Dibuja las tuberías y desplaza sus coordenadas hacia la izquierda.
   */
   method void shiftPipesLeft()
   {
@@ -235,7 +213,7 @@ class FlappyBirdGame
   }
 
   /*
-  Remove Pipe object once it has exited the screen.
+  Elimina objetos Pipe cuando han salido de la pantalla.
   */
   method void disposeUnseenPipe()
   {
@@ -262,7 +240,7 @@ class FlappyBirdGame
   }
 
   /*
-  Create new pipe to go onscreen.
+  Crea una nueva tubería en pantalla.
   */
   method void createNewPipe()
   {
@@ -271,7 +249,6 @@ class FlappyBirdGame
     if (dist_after_last_pipe = dist_between_pipes) {
       let pipes[count_pipes] = Pipe.new(jumps);
       let count_pipes = count_pipes + 1;
-      let total_pipes = total_pipes + 1;
       let dist_after_last_pipe = 0;
     } else {
       let pipe = pipes[0];
@@ -282,29 +259,7 @@ class FlappyBirdGame
   }
 
   /*
-  Calculate final score.
-  */
-  method int calculateScore()
-  {
-    var Pipe pipe;
-    var int i;
-    var int score;
-
-    let score = total_pipes;
-    let i = 0;
-    while (i < count_pipes) {
-      let pipe = pipes[i];
-      if (bird.getXOffset() < (pipe.getXOffset() + pipe.getWidthCurrent() + 1)) {
-        let score = score - 1;
-      }
-      let i = i + 1;
-    }
-
-    return score;
-  }
-
-  /*
-  Determine if there been a collision between bird and borders or pipes.
+  Determina si ha habido una colisión entre el pájaro y los bordes o tuberías.
   */
   method boolean findCollision()
   {
@@ -324,36 +279,36 @@ class FlappyBirdGame
   }
 
   /*
-  Has Bird collided with specific pipe.
+  Comprueba si el pájaro ha colisionado con una tubería específica.
   */
   method boolean collides(Pipe pipe)
   {
-    // Has bird hit the top of the screen.
+    // Si el pájaro golpea la parte superior de la pantalla.
     if (bird.getYOffset() = 0) {
       return true;
     }
 
-    // Has bird hit the bottom of the screen.
+    // Si el pájaro golpea la parte inferior de la pantalla.
     if ((bird.getYOffset() + bird.getSizeY()) = 255) {
       return true;
     }
 
-    // Is bird still in front of pipe.
+    // Si el pájaro todavía está delante de la tubería.
     if (pipe.getXOffset() > (bird.getXOffset() + bird.getSizeX() + 1)) {
       return false;
     }
 
-    // Has bird passed pipe.
+    // Si el pájaro ha pasado la tubería.
     if ((pipe.getXOffset() + pipe.getWidthCurrent()) < bird.getXOffset()) {
       return false;
     }
 
-    // Has bird hit top section of pipe.
+    // Si el pájaro golpea la sección superior de la tubería.
     if (pipe.getGapTop() > bird.getYOffset()) {
       return true;
     }
 
-    // Has bird hit bottom section of pipe.
+    // Si el pájaro golpea la sección inferior de la tubería.
     if (pipe.getGapBottom() < (bird.getYOffset() + bird.getSizeY())) {
       return true;
     }
@@ -362,7 +317,7 @@ class FlappyBirdGame
   }
 
   /*
-  Dispose of FlappyBirdGame object and objects created as properties.
+  Libera la memoria del objeto FlappyBirdGame y sus propiedades.
   */
   method void dispose() {
     var Pipe pipe;
@@ -374,9 +329,7 @@ class FlappyBirdGame
      let i = i + 1;
     }
 
-    do scoreboard.dispose();
     do bird.dispose();
-
     do Memory.deAlloc(this);
 
     return;
