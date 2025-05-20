@@ -13,17 +13,30 @@ class FlappyBirdGame
   field int dist_between_pipes;           // Intervalo entre tuberías.
   field int dist_after_last_pipe;         // Espacio tras la última tubería creada.
   field int jumps;                        // Número de saltos realizados.
+  field int score;                        // Puntuación del jugador
+  field Array scored_pipes;               // Registro de tuberías ya puntuadas
 
   /*
   Constructor del juego Flappy Bird.
   */
   constructor FlappyBirdGame new() {
+    var int i;
+    
     let bird_height_default = 150;
     let pipes = Array.new(10);
+    let scored_pipes = Array.new(10);    // Array para registrar tuberías ya puntuadas
     let count_pipes = 0;
     let dist_between_pipes = 100;
     let dist_after_last_pipe = 0;
     let jumps = 1;
+    let score = 0;                       // Inicializar puntaje a cero
+    
+    // Inicializar scored_pipes (en Jack, 0 = falso, -1 = verdadero)
+    let i = 0;
+    while (i < 10) {
+      let scored_pipes[i] = 0;  // Inicializar como falso (0)
+      let i = i + 1;
+    }
 
     return this;
   }
@@ -40,6 +53,17 @@ class FlappyBirdGame
     do Output.println();
     do Output.printString("'q' para salir");
 
+    return;
+  }
+
+  /*
+  Muestra el puntaje en la pantalla
+  */
+  method void displayScore() {
+    do Output.moveCursor(5, 0);         // Posición más abajo para no sobreescribir instrucciones
+    do Output.printString("Puntos: ");
+    do Output.printInt(score);          // Mostrar el puntaje actual
+    
     return;
   }
 
@@ -67,8 +91,11 @@ class FlappyBirdGame
         // Si hay colisión, reiniciar el juego
         if (findCollision()) {
           do whiteout();
-          do Output.moveCursor(10, 25);
+          do Output.moveCursor(10, 20);
           do Output.printString("Game Over!");
+          do Output.moveCursor(12, 20);
+          do Output.printString("Puntaje Final: ");
+          do Output.printInt(score);
           do Sys.wait(3000);
           do initializeGameState();
           do waitForGameToStart();
@@ -129,6 +156,14 @@ class FlappyBirdGame
     let bird_wing_state_count = 1;
     let bird_fall_count = 1;
     let dist_after_last_pipe = dist_between_pipes;
+    let score = 0;                       // Reiniciar puntaje al reiniciar el juego
+    
+    // Reiniciar el registro de tuberías puntuadas
+    let i = 0;
+    while (i < 10) {
+      let scored_pipes[i] = 0;  // 0 = falso en Jack
+      let i = i + 1;
+    }
 
     return;
   }
@@ -181,15 +216,35 @@ class FlappyBirdGame
   */
   method void draw()
   {
+    var int i;
+    var Pipe pipe;
+    
     // Mueve las tuberías a la izquierda.
     do shiftPipesLeft();
+    
+    // Comprobar si se ha pasado alguna tubería para actualizar el puntaje
+    let i = 0;
+    while (i < count_pipes) {
+      let pipe = pipes[i];
+      // Si el pájaro ha pasado la tubería y aún no se ha contado
+      if ((pipe.getXOffset() + pipe.getWidthCurrent()) < bird.getXOffset()) {
+        if (scored_pipes[i] = 0) {  // Si aún no se ha puntuado (0 = falso)
+          let score = score + 1;    // Incrementar puntaje
+          let scored_pipes[i] = -1; // Marcar como puntuada (-1 = verdadero)
+        }
+      }
+      let i = i + 1;
+    }
+    
     // Elimina la primera tubería si ya no está en pantalla.
     do disposeUnseenPipe();
+    
     // Crea una nueva tubería si la última se ha movido lo suficiente.
     do createNewPipe();
 
     do bird.draw();
-
+    do displayScore();                  // Mostrar el puntaje actualizado
+    
     return;
   }
 
@@ -229,9 +284,12 @@ class FlappyBirdGame
     if (pipe.getWidthCurrent() < 1) {
       do pipe.dispose();
       let count_pipes = count_pipes - 1;
+      
+      // Mover todos los elementos en el array de tuberías
       let i = 0;
       while (i < count_pipes) {
         let pipes[i] = pipes[i+1];
+        let scored_pipes[i] = scored_pipes[i+1];  // También actualizar el registro de puntuación
         let i = i + 1;
       }
     }
@@ -248,6 +306,7 @@ class FlappyBirdGame
 
     if (dist_after_last_pipe = dist_between_pipes) {
       let pipes[count_pipes] = Pipe.new(jumps);
+      let scored_pipes[count_pipes] = 0;  // Marcar la nueva tubería como no puntuada (0 = falso)
       let count_pipes = count_pipes + 1;
       let dist_after_last_pipe = 0;
     } else {
